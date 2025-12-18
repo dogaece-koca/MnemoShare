@@ -1,0 +1,6 @@
+flask==2.2.5
+mnemonic==0.21
+numpy
+qrcode
+pillow
+stegano

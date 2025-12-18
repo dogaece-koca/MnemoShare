@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MnemoShare - Dark Mode</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <header>
+            <div class="logo-area">
+                <i class="fa-solid fa-user-secret logo-icon"></i>
+                <h1>MnemoShare</h1>
+            </div>
+            <p class="subtitle">Shamir's Secret Sharing ile Güvenli Anahtar Yönetimi</p>
+        </header>
+
+        <div class="main-card">
+            <div class="tabs">
+                <button class="tab-button active" data-tab="generate">
+                    <i class="fa-solid fa-key"></i> Oluştur
+                </button>
+                <button class="tab-button" data-tab="split">
+                    <i class="fa-solid fa-scissors"></i> Paylara Böl
+                </button>
+                <button class="tab-button" data-tab="recover">
+                    <i class="fa-solid fa-unlock"></i> Kurtar
+                </button>
+            </div>
+
+            <div class="tab-content active" id="generate">
+                <div class="content-header">
+                    <h2>Mnemonic Oluştur</h2>
+                    <p>BIP-39 standardında yüksek entropili yeni bir cüzdan anahtarı oluşturun.</p>
+                </div>
+                
+                <form id="generate-form">
+                    <div class="form-group">
+                        <label for="strength">Anahtar Gücü</label>
+                        <select id="strength" name="strength" class="styled-input">
+                            <option value="128">128-bit (12 Kelime) - Standart</option>
+                            <option value="256">256-bit (24 Kelime) - Yüksek Güvenlik</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <i class="fa-solid fa-bolt"></i> Oluştur
+                    </button>
+                </form>
+
+                <div class="result-area hidden" id="generate-result-area">
+                    <label>Sonuç:</label>
+                    <div class="code-box">
+                        <p id="generated-mnemonic" class="mnemonic-text"></p>
+                        <button class="copy-btn" onclick="copyText('generated-mnemonic')" title="Kopyala">
+                            <i class="fa-regular fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="split">
+                <div class="content-header">
+                    <h2>Anahtarı Paylara Böl</h2>
+                    <p>Mevcut anahtarı matematiksel parçalara (shares) ayırın.</p>
+                </div>
+
+                <div style="text-align: center; margin-bottom: 20px; padding: 10px; border: 1px dashed #666; border-radius: 8px;">
+                    <button id="connect-snap" class="btn" style="background: #f6851b; color: white; width: 100%; padding: 12px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                        <i class="fa-solid fa-mask" style="font-size: 1.2em;"></i> MetaMask Snap ile Parçala
+                    </button>
+                    <p style="font-size: 0.8em; color: #aaa; margin-top: 8px;">
+                        (Güvenli ortamda otomatik işlem için MetaMask Flask gereklidir)
+                    </p>
+                </div>
+                <form id="split-form">
+                    <div class="form-group">
+                        <label for="secret-input">Mnemonic Phrase (Gizli Anahtar)</label>
+                        <textarea id="secret-input" class="styled-input" placeholder="Veya gizli anahtar kelimelerinizi buraya yapıştırın..." spellcheck="false" required></textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col">
+                            <label for="threshold-input">Eşik Değeri (t)</label>
+                            <input type="number" id="threshold-input" class="styled-input" min="2" value="3" required>
+                            <small>Kurtarmak için gereken min. parça</small>
+                        </div>
+                        <div class="col">
+                            <label for="shares-input">Toplam Pay (n)</label>
+                            <input type="number" id="shares-input" class="styled-input" min="2" value="5" required>
+                            <small>Dağıtılacak toplam parça sayısı</small>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <i class="fa-solid fa-layer-group"></i> Payları Hesapla
+                    </button>
+                </form>
+
+                <div class="result-area hidden" id="split-result-area">
+                    <div class="alert-box">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <strong>ÖNEMLİ:</strong> Bu parçaları (Share) farklı yerlere kaydedin.
+                    </div>
+
+                    <label>Metin Paylar:</label>
+                    <div class="code-box">
+                        <textarea id="shares-output" readonly spellcheck="false"></textarea>
+                        <button class="copy-btn" onclick="copyText('shares-output')" title="Hepsini Kopyala">
+                            <i class="fa-regular fa-copy"></i>
+                        </button>
+                    </div>
+
+                    <hr style="border-color: #444; margin: 20px 0;">
+                    <label><i class="fa-solid fa-qrcode"></i> Fiziksel Yedekleme (QR Kodlar):</label>
+                    <div id="qr-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; margin-top: 10px;">
+                        </div>
+
+                    <hr style="border-color: #444; margin: 20px 0;">
+                    <label><i class="fa-solid fa-image"></i> Steganografi (Resim İçine Gizle):</label>
+                    <p style="font-size: 0.9em; color: #aaa;">Bir parça seçin, bir resim yükleyin ve parçayı resmin piksellerine gizleyin.</p>
+
+                    <div class="stego-box" style="background: #2c2c2c; padding: 15px; border-radius: 8px; margin-top: 10px; border: 1px solid #444;">
+                        <div class="form-group">
+                            <input type="text" id="stego-input-text" placeholder="Gizlenecek metni buraya yapıştırın (Örn: 1-f4a...)" class="styled-input">
+                        </div>
+                        <div class="form-group">
+                            <label>Örtü Resmi (Cover Image):</label>
+                            <input type="file" id="stego-upload-file" accept="image/png, image/jpeg" style="color: white; margin-top: 5px;">
+                        </div>
+                        <button id="btn-hide-stego" class="btn btn-primary btn-block" style="background: #673ab7;">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Resme Gizle ve İndir
+                        </button>
+
+                        <div id="stego-result" class="hidden" style="margin-top: 15px; text-align: center;">
+                            <p style="color: #4caf50; font-weight: bold;">İşlem Başarılı! Resme sağ tıklayıp kaydedin:</p>
+                            <img id="stego-output-img" style="max-width: 100%; border: 2px solid #4caf50; border-radius: 8px; margin-top: 10px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="recover">
+                <div class="content-header">
+                    <h2>Anahtarı Kurtar</h2>
+                    <p>Dağınık payları birleştirerek orijinal sırrı geri getirin.</p>
+                </div>
+
+                <form id="recover-form">
+                    <div class="form-group" style="background: #2c2c2c; padding: 15px; border-radius: 8px; border: 1px dashed #666; margin-bottom: 20px;">
+                        <label><i class="fa-solid fa-eye"></i> Resimden Parça Oku (Steganografi):</label>
+                        <div style="display: flex; gap: 10px; margin-top: 5px; align-items: center;">
+                            <input type="file" id="recover-stego-file" accept="image/png" style="color: white; flex: 1;">
+                            <button type="button" id="btn-reveal-stego" class="btn" style="background: #e91e63; white-space: nowrap;">
+                                <i class="fa-solid fa-upload"></i> Resimden Çıkar
+                            </button>
+                        </div>
+                        <small style="color: #aaa;">Gizli verili resmi yükleyip butona basın, aşağıdaki listeye eklenecektir.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="shares-list">Payları Girin (Her satıra bir pay)</label>
+                        <textarea id="shares-list" class="styled-input" placeholder="1-xxxxxxxx...&#10;2-xxxxxxxx...&#10;3-xxxxxxxx..." spellcheck="false" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-success btn-block">
+                        <i class="fa-solid fa-check-double"></i> Anahtarı Kurtar
+                    </button>
+                </form>
+
+                <div class="result-area hidden" id="recover-result-area">
+                    <label>Kurtarılan Mnemonic:</label>
+                    <div class="code-box success-border">
+                        <p id="recovered-secret" class="mnemonic-text"></p>
+                        <button class="copy-btn" onclick="copyText('recovered-secret')" title="Kopyala">
+                            <i class="fa-regular fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="toast" class="toast hidden">Mesaj</div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "MnemoShare - Secure Wallet Splitter",
+  "version": "1.0",
+  "description": "Shamir's Secret Sharing ile cüzdan şifrelerini parçala ve güvenle sakla.",
+  "permissions": [
+    "clipboardRead",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:5000/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon.png"
+  },
+  "icons": {
+    "128": "icon.png"
+  }
+}
