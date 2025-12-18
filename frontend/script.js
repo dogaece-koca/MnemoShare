@@ -1,27 +1,27 @@
-// --- TOAST Bildirim Sistemi ---
+// --- TOAST Notification System ---
 function showToast(message, type = 'info') {
     const toast = document.getElementById('toast');
     toast.textContent = message;
     toast.className = 'toast show ' + type;
-    
+
     setTimeout(() => {
         toast.className = 'toast hidden';
     }, 4000);
 }
 
-// --- Panoya Kopyalama ---
+// --- Copy to Clipboard ---
 function copyText(elementId) {
     const element = document.getElementById(elementId);
     const text = element.value || element.innerText;
 
     navigator.clipboard.writeText(text).then(() => {
-        showToast('Panoya kopyalandı!', 'success');
+        showToast('Copied to clipboard!', 'success');
     }).catch(err => {
-        showToast('Kopyalama başarısız', 'error');
+        showToast('Copy failed', 'error');
     });
 }
 
-// --- Sekme Yönetimi ---
+// --- Tab Management ---
 document.querySelectorAll('.tab-button').forEach(button => {
     button.addEventListener('click', () => {
         const targetTabId = button.getAttribute('data-tab');
@@ -34,9 +34,9 @@ document.querySelectorAll('.tab-button').forEach(button => {
     });
 });
 
-// --- API İŞLEMLERİ ---
+// --- API OPERATIONS ---
 
-// 1. GENERATE (OLUŞTUR)
+// 1. GENERATE
 const generateForm = document.getElementById('generate-form');
 if (generateForm) {
     generateForm.addEventListener('submit', async (e) => {
@@ -46,7 +46,7 @@ if (generateForm) {
         const mnemonicText = document.getElementById('generated-mnemonic');
 
         resultArea.classList.remove('hidden');
-        mnemonicText.textContent = 'Oluşturuluyor...';
+        mnemonicText.textContent = 'Generating...';
 
         try {
             const response = await fetch('/generate', {
@@ -58,18 +58,18 @@ if (generateForm) {
 
             if (response.ok) {
                 mnemonicText.textContent = data.mnemonic;
-                showToast('Yeni anahtar oluşturuldu', 'success');
+                showToast('New key generated', 'success');
             } else {
-                mnemonicText.textContent = 'Hata';
-                showToast(data.error || 'Hata oluştu', 'error');
+                mnemonicText.textContent = 'Error';
+                showToast(data.error || 'An error occurred', 'error');
             }
         } catch (error) {
-            showToast('Sunucu bağlantı hatası', 'error');
+            showToast('Server connection error', 'error');
         }
     });
 }
 
-// 2. SPLIT (NORMAL BÖLME - Form ile)
+// 2. SPLIT (STANDARD SPLIT - via Form)
 const splitForm = document.getElementById('split-form');
 if (splitForm) {
     splitForm.addEventListener('submit', async (e) => {
@@ -80,7 +80,7 @@ if (splitForm) {
         const resultArea = document.getElementById('split-result-area');
 
         if (!secret) {
-            showToast('Lütfen bir anahtar girin', 'error');
+            showToast('Please enter a key', 'error');
             return;
         }
 
@@ -99,17 +99,17 @@ if (splitForm) {
                 const qrGrid = document.getElementById('qr-grid');
 
                 sharesOutput.value = data.shares.join('\n');
-                qrGrid.innerHTML = ''; // Temizle
+                qrGrid.innerHTML = ''; // Clear previous results
 
-                showToast('Parçalar oluşturuldu.', 'success');
+                showToast('Shares created.', 'success');
 
-                // QR Kodları Oluştur (Frontend tarafında)
+                // Generate QR Codes (Frontend side)
                 data.shares.forEach((share, index) => {
                      const card = document.createElement('div');
                      card.style.cssText = "background: #fff; padding: 10px; border-radius: 8px; text-align: center; color: black; display:inline-block; margin:5px;";
 
                      const title = document.createElement('strong');
-                     title.innerText = `Parça #${index + 1}`;
+                     title.innerText = `Share #${index + 1}`;
                      title.style.display = 'block';
                      card.appendChild(title);
 
@@ -124,15 +124,15 @@ if (splitForm) {
                 });
 
             } else {
-                showToast(data.error || 'İşlem Başarısız', 'error');
+                showToast(data.error || 'Operation failed', 'error');
             }
         } catch (error) {
-            showToast('Sunucu bağlantı hatası', 'error');
+            showToast('Server connection error', 'error');
         }
     });
 }
 
-// 3. RECOVER (KURTAR)
+// 3. RECOVER
 const recoverForm = document.getElementById('recover-form');
 if (recoverForm) {
     recoverForm.addEventListener('submit', async (e) => {
@@ -143,12 +143,12 @@ if (recoverForm) {
         const secretText = document.getElementById('recovered-secret');
 
         if (shares.length < 2) {
-            showToast('En az 2 pay girmelisiniz', 'error');
+            showToast('You must enter at least 2 shares', 'error');
             return;
         }
 
         resultArea.classList.remove('hidden');
-        secretText.textContent = 'Çözülüyor...';
+        secretText.textContent = 'Recovering...';
 
         try {
             const response = await fetch('/recover', {
@@ -160,18 +160,18 @@ if (recoverForm) {
 
             if (response.ok) {
                 secretText.textContent = data.secret;
-                showToast('Anahtar başarıyla kurtarıldı!', 'success');
+                showToast('Key successfully recovered!', 'success');
             } else {
-                secretText.textContent = 'Kurtarılamadı.';
+                secretText.textContent = 'Recovery failed.';
                 showToast(data.error, 'error');
             }
         } catch (error) {
-            showToast('Sunucu bağlantı hatası', 'error');
+            showToast('Server connection error', 'error');
         }
     });
 }
 
-// --- STEGANOGRAFİ İŞLEMLERİ ---
+// --- STEGANOGRAPHY OPERATIONS ---
 const btnHideStego = document.getElementById('btn-hide-stego');
 if (btnHideStego) {
     btnHideStego.addEventListener('click', async () => {
@@ -181,7 +181,7 @@ if (btnHideStego) {
         const resultImg = document.getElementById('stego-output-img');
 
         if (!text || fileInput.files.length === 0) {
-            showToast('Lütfen metin girin ve bir resim seçin.', 'error');
+            showToast('Please enter text and select an image.', 'error');
             return;
         }
 
@@ -189,7 +189,7 @@ if (btnHideStego) {
         formData.append('image', fileInput.files[0]);
         formData.append('secret_text', text);
 
-        showToast('Resim işleniyor...', 'info');
+        showToast('Processing image...', 'info');
 
         try {
             const response = await fetch('/hide-in-image', {
@@ -201,12 +201,12 @@ if (btnHideStego) {
             if (response.ok) {
                 resultImg.src = `data:image/png;base64,${data.stego_image}`;
                 resultDiv.classList.remove('hidden');
-                showToast('Başarılı! Metin resme gizlendi.', 'success');
+                showToast('Success! Text hidden in image.', 'success');
             } else {
-                showToast('Hata: ' + data.error, 'error');
+                showToast('Error: ' + data.error, 'error');
             }
         } catch (err) {
-            showToast('İşlem hatası', 'error');
+            showToast('Processing error', 'error');
         }
     });
 }
@@ -218,14 +218,14 @@ if (btnRevealStego) {
         const textArea = document.getElementById('shares-list');
 
         if (fileInput.files.length === 0) {
-            showToast('Lütfen gizli verili bir resim seçin.', 'error');
+            showToast('Please select an image with hidden data.', 'error');
             return;
         }
 
         const formData = new FormData();
         formData.append('image', fileInput.files[0]);
 
-        showToast('Resim taranıyor...', 'info');
+        showToast('Scanning image...', 'info');
 
         try {
             const response = await fetch('/reveal-from-image', {
@@ -237,21 +237,21 @@ if (btnRevealStego) {
             if (response.ok) {
                 const currentVal = textArea.value;
                 textArea.value = currentVal ? currentVal + '\n' + data.secret_text : data.secret_text;
-                showToast('Gizli veri bulundu ve listeye eklendi!', 'success');
+                showToast('Hidden data found and added to list!', 'success');
             } else {
-                showToast('Hata: ' + (data.error || 'Veri bulunamadı'), 'error');
+                showToast('Error: ' + (data.error || 'Data not found'), 'error');
             }
         } catch (err) {
-            showToast('Okuma hatası', 'error');
+            showToast('Read error', 'error');
         }
     });
 }
 
-// --- METAMASK SNAP BAĞLANTISI (DÜZELTİLMİŞ HALİ) ---
+// --- METAMASK SNAP CONNECTION (UPDATED) ---
 const snapId = 'local:http://localhost:8080';
 const connectSnapBtn = document.getElementById('connect-snap');
 
-// Eğer buton sayfada varsa tıklama olayını ekle
+// Add click event if button exists
 if (connectSnapBtn) {
     connectSnapBtn.addEventListener('click', connectAndSplit);
 }
@@ -260,18 +260,18 @@ async function connectAndSplit(e) {
     e.preventDefault();
 
     if (!window.ethereum) {
-        showToast('MetaMask yüklü değil!', 'error');
+        showToast('MetaMask is not installed!', 'error');
         return;
     }
 
     try {
-        // 1. Snap Bağlantısı
+        // 1. Connect Snap
         await window.ethereum.request({
             method: 'wallet_requestSnaps',
             params: { [snapId]: {} }
         });
 
-        // 2. Snap'i Çalıştır
+        // 2. Invoke Snap
         const result = await window.ethereum.request({
             method: 'wallet_invokeSnap',
             params: {
@@ -281,22 +281,22 @@ async function connectAndSplit(e) {
         });
 
         if (result && result.shares) {
-            // A) Ana Metin Kutusu
+            // A) Main Text Area
             const sharesTextArea = document.getElementById('shares-output');
             const resultArea = document.getElementById('split-result-area');
 
             resultArea.classList.remove('hidden');
             sharesTextArea.value = result.shares.join('\n');
 
-            // B) QR Alanı (Düzeltilmiş Format)
+            // B) QR Area (Formatted)
             const qrGrid = document.getElementById('qr-grid');
             qrGrid.innerHTML = "";
 
-            // Grid Container Ayarı (Yan yana ve boşluklu dizilmesi için)
+            // Grid Container Setup
             qrGrid.style.cssText = "display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; margin-top: 20px;";
 
             result.shares.forEach((share, index) => {
-                // KART TASARIMI
+                // CARD DESIGN
                 const card = document.createElement('div');
                 card.style.cssText = `
                     background: #fff; 
@@ -310,29 +310,29 @@ async function connectAndSplit(e) {
                     color: #333;
                 `;
 
-                // Başlık
+                // Title
                 const title = document.createElement('strong');
-                title.innerText = `Parça #${index + 1}`;
+                title.innerText = `Share #${index + 1}`;
                 title.style.marginBottom = "10px";
                 title.style.fontSize = "1.1em";
-                title.style.color = "#d35400"; // Turuncu vurgu
+                title.style.color = "#d35400"; // Orange accent
                 card.appendChild(title);
 
-                // QR Kod
+                // QR Code
                 const qrDiv = document.createElement('div');
                 new QRCode(qrDiv, {
                     text: share,
-                    width: 150, // QR boyutu
+                    width: 150, // QR size
                     height: 150,
                     colorDark : "#000000",
                     colorLight : "#ffffff",
                     correctLevel : QRCode.CorrectLevel.M
                 });
-                // QR'a biraz boşluk verelim
+                // Spacing for QR
                 qrDiv.style.marginBottom = "15px";
                 card.appendChild(qrDiv);
 
-                // Metin Alanı (Scroll Özellikli)
+                // Text Area (Scrollable)
                 const textVal = document.createElement('div');
                 textVal.innerText = share;
                 textVal.style.cssText = `
@@ -343,16 +343,16 @@ async function connectAndSplit(e) {
                     border: 1px solid #dfe4ea;
                     width: 100%;
                     word-break: break-all;
-                    max-height: 80px;      /* Maksimum yükseklik */
-                    overflow-y: auto;      /* Taşarsa scroll çıkar */
+                    max-height: 80px;      /* Max height */
+                    overflow-y: auto;      /* Scroll if overflows */
                     text-align: left;
                     font-family: monospace;
                 `;
                 card.appendChild(textVal);
 
-                // Kopyala Butonu (Küçük)
+                // Copy Button (Small)
                 const copyBtn = document.createElement('button');
-                copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i> Kopyala';
+                copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i> Copy';
                 copyBtn.style.cssText = `
                     margin-top: 10px;
                     background: #2c3e50;
@@ -366,18 +366,18 @@ async function connectAndSplit(e) {
                 `;
                 copyBtn.onclick = () => {
                     navigator.clipboard.writeText(share);
-                    showToast(`Parça #${index+1} kopyalandı!`, 'success');
+                    showToast(`Share #${index+1} copied!`, 'success');
                 };
                 card.appendChild(copyBtn);
 
                 qrGrid.appendChild(card);
             });
 
-            showToast("Formatlanmış parçalar hazır! ✨", 'success');
+            showToast("Formatted shares are ready!", 'success');
         }
 
     } catch (err) {
         console.error(err);
-        showToast("Hata: " + (err.message || err), 'error');
+        showToast("Error: " + (err.message || err), 'error');
     }
 }

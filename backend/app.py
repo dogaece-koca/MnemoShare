@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_from_directory # send_from_directory eklendi
+from flask import Flask, request, jsonify, send_from_directory
 from generate import generate_mnemonic
 from split import split_secret
 from recover import recover_secret
@@ -6,29 +6,30 @@ from bip39_validator import is_valid_mnemonic
 import qrcode
 from io import BytesIO
 import base64
-from stegano import lsb  # En üste ekle
-from PIL import Image    # Zaten yüklü olması lazım, yoksa ekle
+from stegano import lsb
+from PIL import Image
 from flask_cors import CORS
+
 app = Flask(__name__)
 CORS(app)
-# --- FRONTEND (Kullanıcı Arayüzü) ROTASI ---
-# Bu rotalar, tarayıcının arayüz dosyalarını yüklemesini sağlar.
+
+
+# --- FRONTEND ROUTES ---
+# These routes serve the frontend files.
 
 @app.route("/")
 def serve_index():
-    """Ana dizin isteğinde (/) frontend/index.html dosyasını sunar."""
-    # app.py (backend/) konumundan frontend/ klasöründeki index.html'e ulaşır.
+    """Serves the frontend/index.html file on the root request (/)."""
     return send_from_directory('../frontend', 'index.html')
-    
+
+
 @app.route("/<path:filename>")
 def serve_static(filename):
-    """CSS ve JS gibi statik dosyaları frontend klasöründen sunar."""
-    # index.html'deki <link href="style.css"> gibi istekler buraya düşer.
-    # Bu, Flask'ın varsayılan 'static' klasörünü kullanmadan frontend klasörünü statik olarak sunmasını sağlar.
+    """Serves static files (CSS, JS) from the frontend directory."""
     return send_from_directory('../frontend', filename)
 
 
-# --- API ROTASI: GENERATE (Oluşturma) ---
+# --- API ROUTE: GENERATE ---
 
 @app.post("/generate")
 def api_generate():
@@ -39,38 +40,37 @@ def api_generate():
     return jsonify({"mnemonic": phrase})
 
 
-# --- API ROTASI: SPLIT (Bölme) ---
+# --- API ROUTE: SPLIT ---
 
 @app.post("/split")
 def api_split():
     try:
         data = request.get_json(force=True)
 
-        # Gelen veriyi zorla str() olarak alıyoruz, bu en önemli düzeltme.
-        secret = str(data.get("secret")) 
+        # Force convert secret to string to avoid type errors
+        secret = str(data.get("secret"))
         t = int(data.get("t"))
         n = int(data.get("n"))
 
     except Exception as e:
-        return jsonify({"error": "Giriş verisi hatası (JSON veya t/n değeri geçersiz): " + str(e)}), 400
+        return jsonify({"error": "Input data error (JSON or invalid t/n value): " + str(e)}), 400
 
     if not secret:
-        return jsonify({"error": "Secret (Anahtar) alanı gereklidir."}), 400
+        return jsonify({"error": "Secret field is required."}), 400
 
-    # BIP-39 Kontrolü (Secret str olduğu için artık güvenli)
+    # BIP-39 Check
     if len(secret.split()) >= 12 and not is_valid_mnemonic(secret):
-        return jsonify({"error": "Invalid BIP-39 mnemonic (Geçersiz BIP-39 Anahtarı)"}), 400
+        return jsonify({"error": "Invalid BIP-39 mnemonic"}), 400
 
     try:
         shares = split_secret(secret, t, n)
     except Exception as e:
-        # Hata mesajını daha anlaşılır hale getiriyoruz
-        return jsonify({"error": "Pay oluşturulamadı: " + str(e)}), 400
+        return jsonify({"error": "Failed to create shares: " + str(e)}), 400
 
     return jsonify({"shares": shares})
 
 
-# --- API ROTASI: RECOVER (Kurtarma) ---
+# --- API ROUTE: RECOVER ---
 
 @app.post("/recover")
 def api_recover():
@@ -78,37 +78,37 @@ def api_recover():
 
     shares = data.get("shares")
     if not isinstance(shares, list):
-        return jsonify({"error": "shares must be a list"}), 400
+        return jsonify({"error": "Shares must be a list"}), 400
 
     try:
         secret = recover_secret(shares)
     except Exception as e:
         return jsonify({"error": "Failed to recover secret: " + str(e)}), 400
 
-    # Kurtarılan sırrın bir mnemonic olup olmadığını kontrol et
+    # Check if the recovered secret is a valid mnemonic
     if len(secret.split()) >= 12 and not is_valid_mnemonic(secret):
         return jsonify({"error": "Recovered secret failed BIP-39 validation"}), 400
 
     return jsonify({"secret": secret})
 
 
-# --- API ROTASI: QR KOD OLUŞTURMA ---
+# --- API ROUTE: GENERATE QR CODE ---
 
 @app.route('/generate-qr', methods=['POST'])
 def generate_qr():
     """
-    Gelen metni (Share) QR Kod resmine çevirir ve Base64 string olarak döner.
-    Dosya kaydetme işlemi yapmaz (RAM üzerinde çalışır), bu sayede sunucuda çöp birikmez.
+    Converts provided text (Share) into a QR Code image and returns it as a Base64 string.
+    Operations are performed in RAM (no file saving) to keep the server clean.
     """
     try:
         data = request.json.get('text', '')
         if not data:
             return jsonify({"error": "No text provided"}), 400
 
-        # QR Kodu Oluştur
+        # Create QR Code
         qr = qrcode.QRCode(
             version=1,
-            error_correction=qrcode.constants.ERROR_CORRECT_L,  # Düşük hata düzeltme (Daha az karmaşık desen)
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
             box_size=10,
             border=4,
         )
@@ -117,11 +117,11 @@ def generate_qr():
 
         img = qr.make_image(fill_color="black", back_color="white")
 
-        # Resmi belleğe (RAM) kaydet
+        # Save image to memory (RAM)
         buffered = BytesIO()
         img.save(buffered, format="PNG")
 
-        # Base64 formatına çevir (Frontend'de <img src="data:image..."> olarak göstermek için)
+        # Convert to Base64 (to display as <img src="data:image..."> in frontend)
         img_str = base64.b64encode(buffered.getvalue()).decode()
 
         return jsonify({"qr_image": img_str})
@@ -130,62 +130,62 @@ def generate_qr():
         return jsonify({"error": str(e)}), 500
 
 
-# --- API ROTASI: STEGANOGRAFİ (RESİM İÇİNE GİZLEME) ---
+# --- API ROUTE: STEGANOGRAPHY (HIDE IN IMAGE) ---
 
 @app.route('/hide-in-image', methods=['POST'])
 def hide_in_image():
     """
-    Gönderilen resmin içine metni (Share) gizler.
-    LSB (Least Significant Bit) algoritması kullanılır.
+    Hides text (Share) inside the uploaded image using the LSB (Least Significant Bit) algorithm.
     """
     try:
         if 'image' not in request.files:
-            return jsonify({"error": "Resim yüklenmedi"}), 400
+            return jsonify({"error": "No image uploaded"}), 400
 
         file = request.files['image']
         secret_text = request.form.get('secret_text', '')
 
         if not secret_text:
-            return jsonify({"error": "Gizlenecek metin yok"}), 400
+            return jsonify({"error": "No text provided to hide"}), 400
 
-        # Resmi PIL ile aç
+        # Open image with PIL
         image = Image.open(file)
 
-        # Steganografi işlemi (Metni resme göm)
+        # Steganography process (Embed text into image)
         secret_image = lsb.hide(image, secret_text)
 
-        # Sonucu belleğe kaydet (Diske yazmadan)
+        # Save result to memory
         buffered = BytesIO()
         secret_image.save(buffered, format="PNG")
 
-        # Base64'e çevir
+        # Convert to Base64
         img_str = base64.b64encode(buffered.getvalue()).decode()
 
         return jsonify({"stego_image": img_str})
 
     except Exception as e:
-        return jsonify({"error": f"Steganografi hatası: {str(e)}"}), 500
+        return jsonify({"error": f"Steganography error: {str(e)}"}), 500
 
 
 @app.route('/reveal-from-image', methods=['POST'])
 def reveal_from_image():
     try:
         if 'image' not in request.files:
-            return jsonify({"error": "Resim yüklenmedi"}), 400
+            return jsonify({"error": "No image uploaded"}), 400
 
         file = request.files['image']
         image = Image.open(file)
 
-        # Gizli metni çıkar
+        # Extract hidden text
         secret_text = lsb.reveal(image)
 
         if not secret_text:
-            return jsonify({"error": "Bu resimde gizli veri bulunamadı."}), 404
+            return jsonify({"error": "No hidden data found in this image."}), 404
 
         return jsonify({"secret_text": secret_text})
 
     except Exception as e:
-        return jsonify({"error": f"Okuma hatası: {str(e)}"}), 500
+        return jsonify({"error": f"Reading error: {str(e)}"}), 500
+
 
 if __name__ == "__main__":
     app.run(port=5000, debug=True)

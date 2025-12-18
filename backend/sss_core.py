@@ -29,7 +29,7 @@ def polynomial(x, coeffs, p):
 
 def split_core(secret_num, threshold, shares, prime):
     if threshold > shares:
-        raise ValueError("Eşik değeri (threshold) toplam pay sayısından büyük olamaz.")
+        raise ValueError("Threshold cannot be greater than the total number of shares.")
 
     coeffs = [secret_num]
 
@@ -68,7 +68,7 @@ def combine_core(shares_tuple, prime):
     y_coords = [s[1] for s in shares_tuple]
 
     if len(x_coords) != len(set(x_coords)):
-        raise ValueError("Aynı paydan birden fazla girilmiş. Her payın ID'si benzersiz olmalıdır.")
+        raise ValueError("Duplicate shares provided. Each share ID must be unique.")
 
     secret = 0
     k = len(shares_tuple)

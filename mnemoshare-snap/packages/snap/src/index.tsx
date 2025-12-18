@@ -4,7 +4,7 @@ import { Box, Text, Heading, Divider, Copyable, Bold } from '@metamask/snaps-sdk
 export const onRpcRequest: OnRpcRequestHandler = async ({ origin, request }) => {
   switch (request.method) {
     case 'split_secret':
-      // 1. Şifreyi İste
+      // 1. Request Secret
       const secret = await snap.request({
         method: 'snap_dialog',
         params: {
@@ -13,19 +13,19 @@ export const onRpcRequest: OnRpcRequestHandler = async ({ origin, request }) => 
             <Box>
               <Heading>MnemoShare 🔐</Heading>
               <Text>
-                Gizli anahtarınızı aşağıya yapıştırın.
-                <Bold> Veri parçalanıp sunucudan silinecektir.</Bold>
+                Paste your secret key below.
+                <Bold> Data will be split and deleted from the server.</Bold>
               </Text>
             </Box>
           ),
-          placeholder: 'Gizli Anahtar...',
+          placeholder: 'Secret Key...',
         },
       });
 
       if (!secret || typeof secret !== 'string') return null;
 
       try {
-        // 2. Python'a Gönder
+        // 2. Send to Python Backend
         const response = await fetch('http://127.0.0.1:5000/split', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -35,21 +35,21 @@ export const onRpcRequest: OnRpcRequestHandler = async ({ origin, request }) => 
         const data = await response.json();
         if (!response.ok) throw new Error(data.error);
 
-        // 3. Kullanıcıya Bilgi Ver (Sadece Metin)
+        // 3. Notify User (Text Only)
         await snap.request({
           method: 'snap_dialog',
           params: {
             type: 'alert',
             content: (
               <Box>
-                <Heading>Başarılı! 🎉</Heading>
-                <Text>Parçalar oluşturuldu. QR Kodlarını görmek için web sitesine dönün.</Text>
+                <Heading>Success! 🎉</Heading>
+                <Text>Shares created. Return to the website to view QR Codes.</Text>
               </Box>
             ),
           },
         });
 
-        // 4. KRİTİK NOKTA: Veriyi Web Sitesine Geri Döndür
+        // 4. CRITICAL POINT: Return Data back to Website
         return { shares: data.shares };
 
       } catch (error) {

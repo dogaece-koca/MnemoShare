@@ -10,12 +10,12 @@ def recover_secret(shares: list) -> str:
             y = to_num(y_hex)
             shares_tuple.append((x, y))
         except ValueError:
-            raise ValueError(f"Geçersiz pay formatı: {share_str}. 'SıraNo-HexVeri' formatında olmalıdır.")
+            raise ValueError(f"Invalid share format: {share_str}. Must be in 'Index-HexData' format.")
 
     try:
         recovered_num = combine_core(shares_tuple, PRIME)
     except Exception as e:
-        raise ValueError(f"Matematiksel kurtarma hatası: {str(e)}")
+        raise ValueError(f"Mathematical recovery error: {str(e)}")
 
     recovered_hex = num_to_hex(recovered_num)
 
@@ -23,4 +23,4 @@ def recover_secret(shares: list) -> str:
         mnemonic = entropy_to_mnemonic(recovered_hex)
         return mnemonic
     except Exception:
-        raise ValueError("Sır kurtarılamadı veya geçersiz bir mnemonic oluştu. Yeterli sayıda ve doğru pay girdiğinizden emin olun.")
+        raise ValueError("Failed to recover secret or invalid mnemonic generated. Ensure you have provided enough valid shares.")

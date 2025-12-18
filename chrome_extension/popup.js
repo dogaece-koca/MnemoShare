@@ -1,4 +1,4 @@
-// --- TOAST Bildirim Sistemi ---
+// --- TOAST Notification System ---
 function showToast(message, type = 'info') {
     const toast = document.getElementById('toast');
     toast.textContent = message;
@@ -9,17 +9,17 @@ function showToast(message, type = 'info') {
     }, 4000);
 }
 
-// --- Panoya Kopyalama ---
+// --- Copy to Clipboard ---
 function copyText(elementId) {
     const text = document.getElementById(elementId).innerText || document.getElementById(elementId).value;
     navigator.clipboard.writeText(text).then(() => {
-        showToast('Panoya kopyalandı!', 'success');
+        showToast('Copied to clipboard!', 'success');
     }).catch(err => {
-        showToast('Kopyalama başarısız', 'error');
+        showToast('Copy failed', 'error');
     });
 }
 
-// --- Sekme Yönetimi ---
+// --- Tab Management ---
 document.querySelectorAll('.tab-button').forEach(button => {
     button.addEventListener('click', () => {
         const targetTabId = button.getAttribute('data-tab');
@@ -32,9 +32,9 @@ document.querySelectorAll('.tab-button').forEach(button => {
     });
 });
 
-// --- API İŞLEMLERİ ---
+// --- API OPERATIONS ---
 
-// 1. GENERATE (OLUŞTUR)
+// 1. GENERATE
 document.getElementById('generate-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const strength = document.getElementById('strength').value;
@@ -42,7 +42,7 @@ document.getElementById('generate-form').addEventListener('submit', async (e) =>
     const mnemonicText = document.getElementById('generated-mnemonic');
 
     resultArea.classList.remove('hidden');
-    mnemonicText.textContent = 'Oluşturuluyor...';
+    mnemonicText.textContent = 'Generating...';
 
     try {
         const response = await fetch('http://127.0.0.1:5000/generate', {
@@ -54,17 +54,17 @@ document.getElementById('generate-form').addEventListener('submit', async (e) =>
 
         if (response.ok) {
             mnemonicText.textContent = data.mnemonic;
-            showToast('Yeni anahtar oluşturuldu', 'success');
+            showToast('New key generated', 'success');
         } else {
-            mnemonicText.textContent = 'Hata';
-            showToast(data.error || 'Hata oluştu', 'error');
+            mnemonicText.textContent = 'Error';
+            showToast(data.error || 'An error occurred', 'error');
         }
     } catch (error) {
-        showToast('Sunucu bağlantı hatası', 'error');
+        showToast('Server connection error', 'error');
     }
 });
 
-// 2. SPLIT (BÖL)
+// 2. SPLIT
 document.getElementById('split-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const secret = document.getElementById('secret-input').value.trim();
@@ -72,12 +72,12 @@ document.getElementById('split-form').addEventListener('submit', async (e) => {
     const n = parseInt(document.getElementById('shares-input').value);
     const resultArea = document.getElementById('split-result-area');
 
-    // Eşik değerini bilgi kutusuna yaz (HTML'de bu ID varsa)
+    // Display threshold in info box if ID exists
     const displayT = document.getElementById('display-t');
     if(displayT) displayT.textContent = t;
 
     if (!secret) {
-        showToast('Lütfen bir anahtar girin', 'error');
+        showToast('Please enter a key', 'error');
         return;
     }
 
@@ -97,9 +97,9 @@ document.getElementById('split-form').addEventListener('submit', async (e) => {
             sharesOutput.value = data.shares.join('\n');
 
             qrGrid.innerHTML = '';
-            showToast('Parçalar oluşturuldu, QR kodlar hazırlanıyor...', 'info');
+            showToast('Shares created, preparing QR codes...', 'info');
 
-            // QR Kodları Tek Tek Çek
+            // Fetch QR Codes Individually
             data.shares.forEach(async (share, index) => {
                 try {
                     const qrReq = await fetch('http://127.0.0.1:5000/generate-qr', {
@@ -113,30 +113,31 @@ document.getElementById('split-form').addEventListener('submit', async (e) => {
                         const card = document.createElement('div');
                         card.style.cssText = "background: #fff; padding: 10px; border-radius: 8px; text-align: center; color: black;";
 
+                        // Translated inner HTML content
                         card.innerHTML = `
-                            <strong style="display:block; margin-bottom:5px;">Parça #${index + 1}</strong>
+                            <strong style="display:block; margin-bottom:5px;">Share #${index + 1}</strong>
                             <img src="data:image/png;base64,${qrRes.qr_image}" style="width: 100%; height: auto; display: block;">
                             <a href="data:image/png;base64,${qrRes.qr_image}" download="Share_${index + 1}.png" 
                                style="display:block; margin-top:5px; font-size:0.8em; color:#333; text-decoration:none; border:1px solid #ccc; padding:2px;">
-                               <i class="fa-solid fa-download"></i> İndir
+                               <i class="fa-solid fa-download"></i> Download
                             </a>
                         `;
                         qrGrid.appendChild(card);
                     }
                 } catch (err) {
-                    console.error("QR Hatası:", err);
+                    console.error("QR Error:", err);
                 }
             });
-            showToast('Başarılı! Parçalar ve QR kodlar hazır.', 'success');
+            showToast('Success! Shares and QR codes are ready.', 'success');
         } else {
             showToast(data.error, 'error');
         }
     } catch (error) {
-        showToast('Sunucu bağlantı hatası', 'error');
+        showToast('Server connection error', 'error');
     }
 });
 
-// 3. RECOVER (KURTAR)
+// 3. RECOVER
 document.getElementById('recover-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const sharesInput = document.getElementById('shares-list').value;
@@ -145,12 +146,12 @@ document.getElementById('recover-form').addEventListener('submit', async (e) => 
     const secretText = document.getElementById('recovered-secret');
 
     if (shares.length < 2) {
-        showToast('En az 2 pay girmelisiniz', 'error');
+        showToast('You must enter at least 2 shares', 'error');
         return;
     }
 
     resultArea.classList.remove('hidden');
-    secretText.textContent = 'Çözülüyor...';
+    secretText.textContent = 'Recovering...';
 
     try {
         const response = await fetch('http://127.0.0.1:5000/recover', {
@@ -162,17 +163,17 @@ document.getElementById('recover-form').addEventListener('submit', async (e) => 
 
         if (response.ok) {
             secretText.textContent = data.secret;
-            showToast('Anahtar başarıyla kurtarıldı!', 'success');
+            showToast('Key successfully recovered!', 'success');
         } else {
-            secretText.textContent = 'Kurtarılamadı.';
+            secretText.textContent = 'Recovery failed.';
             showToast(data.error, 'error');
         }
     } catch (error) {
-        showToast('Sunucu bağlantı hatası', 'error');
+        showToast('Server connection error', 'error');
     }
-}); // <-- RECOVER BURADA BİTTİ. DİĞERLERİ DIŞARIDA OLMALI.
+});
 
-// --- STEGANOGRAFİ: GİZLEME (HIDE) ---
+// --- STEGANOGRAPHY: HIDE ---
 document.getElementById('btn-hide-stego').addEventListener('click', async () => {
     const text = document.getElementById('stego-input-text').value;
     const fileInput = document.getElementById('stego-upload-file');
@@ -180,7 +181,7 @@ document.getElementById('btn-hide-stego').addEventListener('click', async () => 
     const resultImg = document.getElementById('stego-output-img');
 
     if (!text || fileInput.files.length === 0) {
-        showToast('Lütfen metin girin ve bir resim seçin.', 'error');
+        showToast('Please enter text and select an image.', 'error');
         return;
     }
 
@@ -188,7 +189,7 @@ document.getElementById('btn-hide-stego').addEventListener('click', async () => 
     formData.append('image', fileInput.files[0]);
     formData.append('secret_text', text);
 
-    showToast('Resim işleniyor...', 'info');
+    showToast('Processing image...', 'info');
 
     try {
         const response = await fetch('http://127.0.0.1:5000/hide-in-image', {
@@ -200,29 +201,29 @@ document.getElementById('btn-hide-stego').addEventListener('click', async () => 
         if (response.ok) {
             resultImg.src = `data:image/png;base64,${data.stego_image}`;
             resultDiv.classList.remove('hidden');
-            showToast('Başarılı! Metin resme gizlendi.', 'success');
+            showToast('Success! Text hidden in image.', 'success');
         } else {
-            showToast('Hata: ' + data.error, 'error');
+            showToast('Error: ' + data.error, 'error');
         }
     } catch (err) {
-        showToast('İşlem hatası', 'error');
+        showToast('Processing error', 'error');
     }
 });
 
-// --- STEGANOGRAFİ: OKUMA (REVEAL) ---
+// --- STEGANOGRAPHY: REVEAL ---
 document.getElementById('btn-reveal-stego').addEventListener('click', async () => {
     const fileInput = document.getElementById('recover-stego-file');
-    const textArea = document.getElementById('shares-list'); // Mevcut textarea'ya yazacağız
+    const textArea = document.getElementById('shares-list');
 
     if (fileInput.files.length === 0) {
-        showToast('Lütfen gizli verili bir resim seçin.', 'error');
+        showToast('Please select an image with hidden data.', 'error');
         return;
     }
 
     const formData = new FormData();
     formData.append('image', fileInput.files[0]);
 
-    showToast('Resim taranıyor...', 'info');
+    showToast('Scanning image...', 'info');
 
     try {
         const response = await fetch('http://127.0.0.1:5000/reveal-from-image', {
@@ -232,15 +233,15 @@ document.getElementById('btn-reveal-stego').addEventListener('click', async () =
         const data = await response.json();
 
         if (response.ok) {
-            // Var olan metne ekle (Yeni satır olarak)
+            // Append to existing text (as new line)
             const currentVal = textArea.value;
             textArea.value = currentVal ? currentVal + '\n' + data.secret_text : data.secret_text;
 
-            showToast('Gizli veri bulundu ve listeye eklendi!', 'success');
+            showToast('Hidden data found and added to list!', 'success');
         } else {
-            showToast('Hata: ' + (data.error || 'Veri bulunamadı'), 'error');
+            showToast('Error: ' + (data.error || 'Data not found'), 'error');
         }
     } catch (err) {
-        showToast('Okuma hatası', 'error');
+        showToast('Read error', 'error');
     }
 });

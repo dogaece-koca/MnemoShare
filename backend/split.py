@@ -1,5 +1,5 @@
 from generate import mnemonic_to_entropy
-# Düzeltilmiş matematik kütüphanesini import ediyoruz
+# Import corrected math library
 from sss_core import PRIME, to_num, num_to_hex, split_core
 
 def split_secret(secret: str, threshold: int, shares: int) -> list:
@@ -7,20 +7,20 @@ def split_secret(secret: str, threshold: int, shares: int) -> list:
     Secret (Mnemonic) -> Entropy (Hex) -> Number -> Shamir Shares
     """
     if threshold < 2:
-        raise ValueError("Eşik değeri (threshold) en az 2 olmalıdır.")
+        raise ValueError("Threshold must be at least 2.")
     if threshold > shares:
-        raise ValueError("Eşik değeri toplam pay sayısından (n) büyük olamaz.")
+        raise ValueError("Threshold cannot be greater than the total number of shares (n).")
 
-    # 1. Mnemonic'i Entropi (HEX String) haline getir
-    # Örnek: "cat dog ..." -> "a1b2..."
+    # 1. Convert Mnemonic to Entropy (HEX String)
+    # Example: "cat dog ..." -> "a1b2..."
     hex_secret = mnemonic_to_entropy(secret)
 
-    # 2. Hex'i sayıya çevir
+    # 2. Convert Hex to number
     secret_num = to_num(hex_secret)
 
-    # 3. Matematiği çalıştır ve payları üret
+    # 3. Run the math and generate shares
     raw_shares = split_core(secret_num, threshold, shares, PRIME)
 
-    # 4. Payları kullanıcı dostu string formatına (x-y) çevir
-    # Örnek: "1-fa43..."
+    # 4. Convert shares to user-friendly string format (x-y)
+    # Example: "1-fa43..."
     return [f"{x}-{num_to_hex(y)}" for x, y in raw_shares]
