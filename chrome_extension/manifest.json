@@ -1,20 +1,18 @@
 {
   "manifest_version": 3,
-  "name": "MnemoShare - Secure Wallet Splitter",
+  "name": "MnemoShare - Secret Key Manager",
   "version": "1.0",
-  "description": "Split and securely store wallet secrets using Shamir's Secret Sharing.",
+  "description": "Securely manage, split and recover keys using Shamir's Secret Sharing.",
   "permissions": [
-    "clipboardRead",
     "activeTab"
   ],
   "host_permissions": [
     "http://127.0.0.1:5000/*"
   ],
   "action": {
-    "default_popup": "popup.html",
-    "default_icon": "icon.png"
+    "default_popup": "popup.html"
   },
-  "icons": {
-    "128": "icon.png"
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
   }
 }

@@ -157,7 +157,18 @@
                                 <i class="fa-solid fa-upload"></i> Extract from Image
                             </button>
                         </div>
-                        <small style="color: #aaa;">Upload the image with hidden data and click the button; it will be added to the list below.</small>
+                        <small style="color: #aaa;">Use this for images where text is hidden INSIDE pixels.</small>
+                    </div>
+
+                    <div class="form-group" style="background: #2c2c2c; padding: 15px; border-radius: 8px; border: 1px dashed #666; margin-bottom: 20px;">
+                        <label><i class="fa-solid fa-qrcode"></i> Read Share from QR Code Image</label>
+                        <div style="display: flex; gap: 10px; margin-top: 5px; align-items: center;">
+                            <input type="file" id="recover-qr-file" accept="image/png, image/jpeg" style="color: white; flex: 1;">
+                            <button type="button" id="btn-read-qr" class="btn" style="background: #ff9800; color: black; white-space: nowrap;">
+                                <i class="fa-solid fa-camera"></i> Extract from QR
+                            </button>
+                        </div>
+                        <small style="color: #aaa;">Upload a screenshot or photo of a QR code share.</small>
                     </div>
 
                     <div class="form-group">
@@ -185,6 +196,7 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

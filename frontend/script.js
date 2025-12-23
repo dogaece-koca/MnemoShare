@@ -99,27 +99,131 @@ if (splitForm) {
                 const qrGrid = document.getElementById('qr-grid');
 
                 sharesOutput.value = data.shares.join('\n');
-                qrGrid.innerHTML = ''; // Clear previous results
+                qrGrid.innerHTML = ''; // Temizle
+
+                // Grid Container Stili
+                qrGrid.style.cssText = "display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; margin-top: 20px;";
 
                 showToast('Shares created.', 'success');
 
-                // Generate QR Codes (Frontend side)
+                // Kartları Oluştur
                 data.shares.forEach((share, index) => {
+                     // KART TASARIMI
                      const card = document.createElement('div');
-                     card.style.cssText = "background: #fff; padding: 10px; border-radius: 8px; text-align: center; color: black; display:inline-block; margin:5px;";
+                     card.style.cssText = `
+                        background: #fff; 
+                        width: 220px; 
+                        padding: 15px; 
+                        border-radius: 12px; 
+                        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        color: #333;
+                     `;
 
+                     // Başlık
                      const title = document.createElement('strong');
                      title.innerText = `Share #${index + 1}`;
-                     title.style.display = 'block';
+                     title.style.marginBottom = "10px";
+                     title.style.fontSize = "1.1em";
+                     title.style.color = "#d35400"; // Turuncu vurgu
                      card.appendChild(title);
 
+                     // QR Kod
                      const qrDiv = document.createElement('div');
                      new QRCode(qrDiv, {
                         text: share,
-                        width: 128,
-                        height: 128
+                        width: 150,
+                        height: 150,
+                        colorDark : "#000000",
+                        colorLight : "#ffffff",
+                        correctLevel : QRCode.CorrectLevel.M
                      });
+                     qrDiv.style.marginBottom = "15px";
                      card.appendChild(qrDiv);
+
+                     // Metin Alanı (Scroll özellikli)
+                     const textVal = document.createElement('div');
+                     textVal.innerText = share;
+                     textVal.style.cssText = `
+                        font-size: 11px;
+                        background: #f1f2f6;
+                        padding: 8px;
+                        border-radius: 6px;
+                        border: 1px solid #dfe4ea;
+                        width: 100%;
+                        word-break: break-all;
+                        max-height: 80px;      
+                        overflow-y: auto;      
+                        text-align: left;
+                        font-family: monospace;
+                     `;
+                     card.appendChild(textVal);
+
+                     // --- BUTON GRUBU ---
+                     const btnGroup = document.createElement('div');
+                     btnGroup.style.cssText = "display: flex; gap: 8px; width: 100%; margin-top: 10px;";
+
+                     // 1. Metin Kopyala Butonu
+                     const copyBtn = document.createElement('button');
+                     copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i> Text';
+                     copyBtn.title = "Copy Text Share";
+                     copyBtn.style.cssText = `
+                        flex: 1;
+                        background: #2c3e50;
+                        color: white;
+                        border: none;
+                        padding: 8px 5px;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        font-size: 0.8em;
+                     `;
+                     copyBtn.onclick = () => {
+                        navigator.clipboard.writeText(share);
+                        showToast(`Share #${index+1} text copied!`, 'success');
+                     };
+                     btnGroup.appendChild(copyBtn);
+
+                     // 2. QR Kaydet Butonu (YENİ)
+                     const saveQrBtn = document.createElement('button');
+                     saveQrBtn.innerHTML = '<i class="fa-solid fa-download"></i> Save QR';
+                     saveQrBtn.title = "Download QR Code";
+                     saveQrBtn.style.cssText = `
+                        flex: 1;
+                        background: #d35400; /* Turuncu */
+                        color: white;
+                        border: none;
+                        padding: 8px 5px;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        font-size: 0.8em;
+                     `;
+                     saveQrBtn.onclick = () => {
+                        // QRCode.js canvas veya img oluşturur, onu bulup indiriyoruz
+                        const img = qrDiv.querySelector('img');
+                        const canvas = qrDiv.querySelector('canvas');
+
+                        let src = "";
+                        if (img && img.src) {
+                            src = img.src;
+                        } else if (canvas) {
+                            src = canvas.toDataURL("image/png");
+                        }
+
+                        if (src) {
+                            const link = document.createElement('a');
+                            link.href = src;
+                            link.download = `MnemoShare_Part_${index+1}.png`;
+                            link.click();
+                            showToast(`Share #${index+1} QR saved!`, 'success');
+                        } else {
+                            showToast("QR Code not ready yet", "error");
+                        }
+                     };
+                     btnGroup.appendChild(saveQrBtn);
+
+                     card.appendChild(btnGroup);
                      qrGrid.appendChild(card);
                 });
 
@@ -247,11 +351,11 @@ if (btnRevealStego) {
     });
 }
 
-// --- METAMASK SNAP CONNECTION (UPDATED) ---
-const snapId = 'local:http://localhost:8080';
+
+// --- METAMASK SNAP CONNECTION  ---
+const snapId = 'local:http://localhost:8080'; // Canlıda npm paket ismi olur
 const connectSnapBtn = document.getElementById('connect-snap');
 
-// Add click event if button exists
 if (connectSnapBtn) {
     connectSnapBtn.addEventListener('click', connectAndSplit);
 }
@@ -265,13 +369,15 @@ async function connectAndSplit(e) {
     }
 
     try {
-        // 1. Connect Snap
+        // 1. Snap'e Bağlan
         await window.ethereum.request({
             method: 'wallet_requestSnaps',
             params: { [snapId]: {} }
         });
 
-        // 2. Invoke Snap
+        showToast('Check your MetaMask window...', 'info');
+
+        // 2. İşlemi Başlat (Veri beklemiyoruz, her şey orada olacak)
         const result = await window.ethereum.request({
             method: 'wallet_invokeSnap',
             params: {
@@ -280,104 +386,68 @@ async function connectAndSplit(e) {
             }
         });
 
-        if (result && result.shares) {
-            // A) Main Text Area
-            const sharesTextArea = document.getElementById('shares-output');
-            const resultArea = document.getElementById('split-result-area');
+        // 3. Sonuç Kontrolü
+        if (result && result.success) {
+            // Ekrana veri yazdırmıyoruz!
+            document.getElementById('split-result-area').classList.remove('hidden');
 
-            resultArea.classList.remove('hidden');
-            sharesTextArea.value = result.shares.join('\n');
+            // Kullanıcıyı bilgilendir
+            const sharesOutput = document.getElementById('shares-output');
+            sharesOutput.value = "SECURE MODE: Shares are displayed inside MetaMask window only.\nThey are not saved here for your security.";
 
-            // B) QR Area (Formatted)
+            // QR alanını temizle ve bilgi mesajı koy
             const qrGrid = document.getElementById('qr-grid');
-            qrGrid.innerHTML = "";
+            qrGrid.innerHTML = "<p style='color:#ccc; padding:20px;'>QR Codes are disabled in Secure Snap Mode.</p>";
 
-            // Grid Container Setup
-            qrGrid.style.cssText = "display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; margin-top: 20px;";
-
-            result.shares.forEach((share, index) => {
-                // CARD DESIGN
-                const card = document.createElement('div');
-                card.style.cssText = `
-                    background: #fff; 
-                    width: 220px; 
-                    padding: 15px; 
-                    border-radius: 12px; 
-                    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    color: #333;
-                `;
-
-                // Title
-                const title = document.createElement('strong');
-                title.innerText = `Share #${index + 1}`;
-                title.style.marginBottom = "10px";
-                title.style.fontSize = "1.1em";
-                title.style.color = "#d35400"; // Orange accent
-                card.appendChild(title);
-
-                // QR Code
-                const qrDiv = document.createElement('div');
-                new QRCode(qrDiv, {
-                    text: share,
-                    width: 150, // QR size
-                    height: 150,
-                    colorDark : "#000000",
-                    colorLight : "#ffffff",
-                    correctLevel : QRCode.CorrectLevel.M
-                });
-                // Spacing for QR
-                qrDiv.style.marginBottom = "15px";
-                card.appendChild(qrDiv);
-
-                // Text Area (Scrollable)
-                const textVal = document.createElement('div');
-                textVal.innerText = share;
-                textVal.style.cssText = `
-                    font-size: 11px;
-                    background: #f1f2f6;
-                    padding: 8px;
-                    border-radius: 6px;
-                    border: 1px solid #dfe4ea;
-                    width: 100%;
-                    word-break: break-all;
-                    max-height: 80px;      /* Max height */
-                    overflow-y: auto;      /* Scroll if overflows */
-                    text-align: left;
-                    font-family: monospace;
-                `;
-                card.appendChild(textVal);
-
-                // Copy Button (Small)
-                const copyBtn = document.createElement('button');
-                copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i> Copy';
-                copyBtn.style.cssText = `
-                    margin-top: 10px;
-                    background: #2c3e50;
-                    color: white;
-                    border: none;
-                    padding: 5px 10px;
-                    border-radius: 4px;
-                    cursor: pointer;
-                    font-size: 0.8em;
-                    width: 100%;
-                `;
-                copyBtn.onclick = () => {
-                    navigator.clipboard.writeText(share);
-                    showToast(`Share #${index+1} copied!`, 'success');
-                };
-                card.appendChild(copyBtn);
-
-                qrGrid.appendChild(card);
-            });
-
-            showToast("Formatted shares are ready!", 'success');
+            showToast("Operation completed in MetaMask.", 'success');
+        } else {
+             showToast("Operation cancelled.", 'error');
         }
 
     } catch (err) {
         console.error(err);
-        showToast("Error: " + (err.message || err), 'error');
+        // Kullanıcı pencereyi kapatırsa buraya düşer
+        showToast("Operation cancelled by user.", 'error');
     }
+}
+
+// --- RECOVER QR READER ---
+const btnReadQr = document.getElementById('btn-read-qr');
+if (btnReadQr) {
+    btnReadQr.addEventListener('click', () => {
+        const fileInput = document.getElementById('recover-qr-file');
+        const textArea = document.getElementById('shares-list');
+
+        if (fileInput.files.length === 0) {
+            showToast('Please select a QR code image.', 'error');
+            return;
+        }
+
+        const file = fileInput.files[0];
+        const reader = new FileReader();
+
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                context.drawImage(img, 0, 0, img.width, img.height);
+                const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+
+                const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+                if (code) {
+                    const currentVal = textArea.value;
+                    textArea.value = currentVal ? currentVal + '\n' + code.data : code.data;
+                    showToast('QR Code successfully read!', 'success');
+                } else {
+                    showToast('No QR code found in this image.', 'error');
+                }
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
 }

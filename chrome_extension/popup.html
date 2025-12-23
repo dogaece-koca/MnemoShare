@@ -2,8 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MnemoShare - Dark Mode</title>
+    <title>MnemoShare</title>
     <link rel="stylesheet" href="popup.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -15,7 +14,7 @@
                 <i class="fa-solid fa-user-secret logo-icon"></i>
                 <h1>MnemoShare</h1>
             </div>
-            <p class="subtitle">Secure Key Management with Shamir's Secret Sharing</p>
+            <p class="subtitle">Secure Key Management</p>
         </header>
 
         <div class="main-card">
@@ -24,7 +23,7 @@
                     <i class="fa-solid fa-key"></i> Generate
                 </button>
                 <button class="tab-button" data-tab="split">
-                    <i class="fa-solid fa-scissors"></i> Split Shares
+                    <i class="fa-solid fa-scissors"></i> Split
                 </button>
                 <button class="tab-button" data-tab="recover">
                     <i class="fa-solid fa-unlock"></i> Recover
@@ -34,7 +33,7 @@
             <div class="tab-content active" id="generate">
                 <div class="content-header">
                     <h2>Generate Mnemonic</h2>
-                    <p>Create a new high-entropy wallet key using the BIP-39 standard.</p>
+                    <p>Create a new high-entropy wallet key.</p>
                 </div>
 
                 <form id="generate-form">
@@ -54,7 +53,7 @@
                     <label>Result:</label>
                     <div class="code-box">
                         <p id="generated-mnemonic" class="mnemonic-text"></p>
-                        <button class="copy-btn" onclick="copyText('generated-mnemonic')" title="Copy">
+                        <button class="copy-btn" id="btn-copy-gen" title="Copy">
                             <i class="fa-regular fa-copy"></i>
                         </button>
                     </div>
@@ -64,12 +63,12 @@
             <div class="tab-content" id="split">
                 <div class="content-header">
                     <h2>Split Key into Shares</h2>
-                    <p>Split an existing key into mathematical shares.</p>
+                    <p>Split an existing key into shares.</p>
                 </div>
 
                 <form id="split-form">
                     <div class="form-group">
-                        <label for="secret-input">Mnemonic Phrase (Secret Key)</label>
+                        <label for="secret-input">Mnemonic Phrase</label>
                         <textarea id="secret-input" class="styled-input" placeholder="Paste your secret mnemonic words here..." spellcheck="false" required></textarea>
                     </div>
 
@@ -77,12 +76,10 @@
                         <div class="col">
                             <label for="threshold-input">Threshold (t)</label>
                             <input type="number" id="threshold-input" class="styled-input" min="2" value="3" required>
-                            <small>Min. shares required to recover</small>
                         </div>
                         <div class="col">
-                            <label for="shares-input">Total Shares (n)</label>
+                            <label for="shares-input">Total (n)</label>
                             <input type="number" id="shares-input" class="styled-input" min="2" value="5" required>
-                            <small>Total number of shares to distribute</small>
                         </div>
                     </div>
 
@@ -94,36 +91,34 @@
                 <div class="result-area hidden" id="split-result-area">
                     <div class="alert-box">
                         <i class="fa-solid fa-triangle-exclamation"></i>
-                        <strong>IMPORTANT:</strong> Save these shares in different locations.
+                        <strong>IMPORTANT:</strong> Save shares in different locations.
                     </div>
 
                     <label>Text Shares:</label>
                     <div class="code-box">
                         <textarea id="shares-output" readonly spellcheck="false"></textarea>
-                        <button class="copy-btn" onclick="copyText('shares-output')" title="Copy All">
+                        <button class="copy-btn" id="btn-copy-all-shares" title="Copy All">
                             <i class="fa-regular fa-copy"></i>
                         </button>
                     </div>
 
                     <hr style="border-color: #444; margin: 20px 0;">
                     <label><i class="fa-solid fa-qrcode"></i> Physical Backup (QR Codes):</label>
-                    <div id="qr-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; margin-top: 10px;">
-                        </div>
+                    <div id="qr-grid"></div>
 
                     <hr style="border-color: #444; margin: 20px 0;">
                     <label><i class="fa-solid fa-image"></i> Steganography (Hide in Image):</label>
-                    <p style="font-size: 0.9em; color: #aaa;">Select a share, upload an image, and hide the share inside the image pixels.</p>
 
                     <div class="stego-box" style="background: #2c2c2c; padding: 15px; border-radius: 8px; margin-top: 10px; border: 1px solid #444;">
                         <div class="form-group">
-                            <input type="text" id="stego-input-text" placeholder="Paste text to hide here (e.g., 1-f4a...)" class="styled-input">
+                            <input type="text" id="stego-input-text" placeholder="Paste text to hide..." class="styled-input">
                         </div>
                         <div class="form-group">
                             <label>Cover Image:</label>
                             <input type="file" id="stego-upload-file" accept="image/png, image/jpeg" style="color: white; margin-top: 5px;">
                         </div>
                         <button id="btn-hide-stego" class="btn btn-primary btn-block" style="background: #673ab7;">
-                            <i class="fa-solid fa-wand-magic-sparkles"></i> Hide in Image & Download
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Hide & Download
                         </button>
 
                         <div id="stego-result" class="hidden" style="margin-top: 15px; text-align: center;">
@@ -137,24 +132,33 @@
             <div class="tab-content" id="recover">
                 <div class="content-header">
                     <h2>Recover Key</h2>
-                    <p>Combine scattered shares to restore the original secret.</p>
+                    <p>Combine scattered shares to restore.</p>
                 </div>
 
                 <form id="recover-form">
-                    <div class="form-group" style="background: #2c2c2c; padding: 15px; border-radius: 8px; border: 1px dashed #666; margin-bottom: 20px;">
-                        <label><i class="fa-solid fa-eye"></i> Read Share from Image (Steganography):</label>
+                    <div class="form-group" style="background: #2c2c2c; padding: 10px; border-radius: 8px; border: 1px dashed #666; margin-bottom: 15px;">
+                        <label><i class="fa-solid fa-eye"></i> From Steganography Image:</label>
                         <div style="display: flex; gap: 10px; margin-top: 5px; align-items: center;">
-                            <input type="file" id="recover-stego-file" accept="image/png" style="color: white; flex: 1;">
-                            <button type="button" id="btn-reveal-stego" class="btn" style="background: #e91e63; white-space: nowrap;">
-                                <i class="fa-solid fa-upload"></i> Extract from Image
+                            <input type="file" id="recover-stego-file" accept="image/png" style="color: white; flex: 1; font-size: 0.8rem;">
+                            <button type="button" id="btn-reveal-stego" class="btn" style="background: #e91e63; font-size: 0.8rem; padding: 8px;">
+                                <i class="fa-solid fa-upload"></i> Extract
                             </button>
                         </div>
-                        <small style="color: #aaa;">Upload the image with hidden data and click the button; it will be added to the list below.</small>
+                    </div>
+
+                    <div class="form-group" style="background: #2c2c2c; padding: 10px; border-radius: 8px; border: 1px dashed #666; margin-bottom: 15px;">
+                        <label><i class="fa-solid fa-qrcode"></i> From QR Code Image:</label>
+                        <div style="display: flex; gap: 10px; margin-top: 5px; align-items: center;">
+                            <input type="file" id="recover-qr-file" accept="image/png, image/jpeg" style="color: white; flex: 1; font-size: 0.8rem;">
+                            <button type="button" id="btn-read-qr" class="btn" style="background: #ff9800; color: black; font-size: 0.8rem; padding: 8px;">
+                                <i class="fa-solid fa-camera"></i> Scan QR
+                            </button>
+                        </div>
                     </div>
 
                     <div class="form-group">
-                        <label for="shares-list">Enter Shares (One share per line)</label>
-                        <textarea id="shares-list" class="styled-input" placeholder="1-xxxxxxxx...&#10;2-xxxxxxxx...&#10;3-xxxxxxxx..." spellcheck="false" required></textarea>
+                        <label for="shares-list">Enter Shares</label>
+                        <textarea id="shares-list" class="styled-input" placeholder="1-xxxxxxxx...&#10;2-xxxxxxxx..." spellcheck="false" required></textarea>
                     </div>
                     <button type="submit" class="btn btn-success btn-block">
                         <i class="fa-solid fa-check-double"></i> Recover Key
@@ -165,7 +169,7 @@
                     <label>Recovered Mnemonic:</label>
                     <div class="code-box success-border">
                         <p id="recovered-secret" class="mnemonic-text"></p>
-                        <button class="copy-btn" onclick="copyText('recovered-secret')" title="Copy">
+                        <button class="copy-btn" id="btn-copy-rec" title="Copy">
                             <i class="fa-regular fa-copy"></i>
                         </button>
                     </div>
@@ -176,6 +180,8 @@
         <div id="toast" class="toast hidden">Message</div>
     </div>
 
+    <script src="js/qrcode.min.js"></script>
+    <script src="js/jsQR.min.js"></script>
     <script src="popup.js"></script>
 </body>
 </html>

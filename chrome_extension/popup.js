@@ -11,7 +11,9 @@ function showToast(message, type = 'info') {
 
 // --- Copy to Clipboard ---
 function copyText(elementId) {
-    const text = document.getElementById(elementId).innerText || document.getElementById(elementId).value;
+    const element = document.getElementById(elementId);
+    const text = element.value || element.innerText;
+
     navigator.clipboard.writeText(text).then(() => {
         showToast('Copied to clipboard!', 'success');
     }).catch(err => {
@@ -64,17 +66,13 @@ document.getElementById('generate-form').addEventListener('submit', async (e) =>
     }
 });
 
-// 2. SPLIT
+// 2. SPLIT (GÜNCELLENDİ: Metin ve Kopyalama Butonu Eklendi)
 document.getElementById('split-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const secret = document.getElementById('secret-input').value.trim();
     const t = parseInt(document.getElementById('threshold-input').value);
     const n = parseInt(document.getElementById('shares-input').value);
     const resultArea = document.getElementById('split-result-area');
-
-    // Display threshold in info box if ID exists
-    const displayT = document.getElementById('display-t');
-    if(displayT) displayT.textContent = t;
 
     if (!secret) {
         showToast('Please enter a key', 'error');
@@ -97,10 +95,15 @@ document.getElementById('split-form').addEventListener('submit', async (e) => {
             sharesOutput.value = data.shares.join('\n');
 
             qrGrid.innerHTML = '';
+            // Grid düzeni (Web versiyonu ile aynı stil)
+            qrGrid.style.cssText = "display: flex; flex-direction: column; gap: 15px; align-items: center; margin-top: 15px;";
+
             showToast('Shares created, preparing QR codes...', 'info');
 
             // Fetch QR Codes Individually
-            data.shares.forEach(async (share, index) => {
+            for (let index = 0; index < data.shares.length; index++) {
+                const share = data.shares[index];
+
                 try {
                     const qrReq = await fetch('http://127.0.0.1:5000/generate-qr', {
                         method: 'POST',
@@ -110,24 +113,109 @@ document.getElementById('split-form').addEventListener('submit', async (e) => {
                     const qrRes = await qrReq.json();
 
                     if (qrRes.qr_image) {
+                        // KART OLUŞTURMA (DOM Element Yöntemiyle - CSP Uyumlu)
                         const card = document.createElement('div');
-                        card.style.cssText = "background: #fff; padding: 10px; border-radius: 8px; text-align: center; color: black;";
-
-                        // Translated inner HTML content
-                        card.innerHTML = `
-                            <strong style="display:block; margin-bottom:5px;">Share #${index + 1}</strong>
-                            <img src="data:image/png;base64,${qrRes.qr_image}" style="width: 100%; height: auto; display: block;">
-                            <a href="data:image/png;base64,${qrRes.qr_image}" download="Share_${index + 1}.png" 
-                               style="display:block; margin-top:5px; font-size:0.8em; color:#333; text-decoration:none; border:1px solid #ccc; padding:2px;">
-                               <i class="fa-solid fa-download"></i> Download
-                            </a>
+                        card.style.cssText = `
+                            background: #fff; 
+                            width: 100%; 
+                            padding: 15px; 
+                            border-radius: 8px; 
+                            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            color: #333;
+                            box-sizing: border-box;
                         `;
+
+                        // Başlık
+                        const title = document.createElement('strong');
+                        title.innerText = `Share #${index + 1}`;
+                        title.style.cssText = "display:block; margin-bottom:10px; color:#d35400; font-size:1.1em;";
+                        card.appendChild(title);
+
+                        // Resim
+                        const img = document.createElement('img');
+                        img.src = `data:image/png;base64,${qrRes.qr_image}`;
+                        img.style.cssText = "width: 150px; height: 150px; display: block; margin-bottom: 10px;";
+                        card.appendChild(img);
+
+                        // Metin Alanı (Scroll özellikli)
+                        const textVal = document.createElement('div');
+                        textVal.innerText = share;
+                        textVal.style.cssText = `
+                            font-size: 11px;
+                            background: #f1f2f6;
+                            padding: 8px;
+                            border-radius: 6px;
+                            border: 1px solid #dfe4ea;
+                            width: 100%;
+                            word-break: break-all;
+                            max-height: 60px;      
+                            overflow-y: auto;      
+                            text-align: left;
+                            font-family: monospace;
+                            margin-bottom: 8px;
+                            color: #333;
+                        `;
+                        card.appendChild(textVal);
+
+                        // Buton Grubu
+                        const btnGroup = document.createElement('div');
+                        btnGroup.style.cssText = "display: flex; gap: 10px; width: 100%;";
+
+                        // Kopyala Butonu
+                        const copyBtn = document.createElement('button');
+                        copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i> Copy';
+                        copyBtn.className = "btn"; // Genel btn stili
+                        copyBtn.style.cssText = `
+                            flex: 1;
+                            background: #2c3e50;
+                            color: white;
+                            border: none;
+                            padding: 8px;
+                            border-radius: 4px;
+                            cursor: pointer;
+                            font-size: 0.8rem;
+                        `;
+                        // Event Listener (Inline onclick yerine)
+                        copyBtn.addEventListener('click', () => {
+                             navigator.clipboard.writeText(share).then(() => {
+                                 showToast(`Share #${index+1} copied!`, 'success');
+                             });
+                        });
+                        btnGroup.appendChild(copyBtn);
+
+                        // İndir Butonu
+                        const downloadLink = document.createElement('a');
+                        downloadLink.href = `data:image/png;base64,${qrRes.qr_image}`;
+                        downloadLink.download = `Share_${index + 1}.png`;
+                        downloadLink.innerHTML = '<i class="fa-solid fa-download"></i> Save QR';
+                        downloadLink.style.cssText = `
+                            flex: 1;
+                            background: #d35400;
+                            color: white;
+                            text-decoration: none;
+                            padding: 8px;
+                            border-radius: 4px;
+                            font-size: 0.8rem;
+                            text-align: center;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            gap: 5px;
+                            font-weight: bold;
+                        `;
+                        btnGroup.appendChild(downloadLink);
+
+                        card.appendChild(btnGroup);
                         qrGrid.appendChild(card);
                     }
                 } catch (err) {
                     console.error("QR Error:", err);
                 }
-            });
+            } // End for loop
+
             showToast('Success! Shares and QR codes are ready.', 'success');
         } else {
             showToast(data.error, 'error');
@@ -244,4 +332,16 @@ document.getElementById('btn-reveal-stego').addEventListener('click', async () =
     } catch (err) {
         showToast('Read error', 'error');
     }
+});
+// --- STATIC COPY BUTTON LISTENERS (For Extension Compliance) ---
+document.getElementById('btn-copy-gen')?.addEventListener('click', () => {
+    copyText('generated-mnemonic');
+});
+
+document.getElementById('btn-copy-rec')?.addEventListener('click', () => {
+    copyText('recovered-secret');
+});
+
+document.getElementById('btn-copy-all-shares')?.addEventListener('click', () => {
+    copyText('shares-output');
 });
