@@ -368,36 +368,47 @@ async function connectAndSplit(e) {
         return;
     }
 
+    const tInput = document.getElementById('threshold-input').value;
+    const nInput = document.getElementById('shares-input').value;
+
+    const tVal = tInput ? parseInt(tInput) : 3;
+    const nVal = nInput ? parseInt(nInput) : 5;
+
+    if (tVal > nVal) {
+        showToast('Threshold cannot be larger than Total Shares!', 'error');
+        return;
+    }
+
     try {
-        // 1. Snap'e Bağlan
         await window.ethereum.request({
             method: 'wallet_requestSnaps',
             params: { [snapId]: {} }
         });
 
-        showToast('Check your MetaMask window...', 'info');
+        showToast(`Processing (${tVal}-of-${nVal}) scheme in MetaMask...`, 'info');
 
-        // 2. İşlemi Başlat (Veri beklemiyoruz, her şey orada olacak)
         const result = await window.ethereum.request({
             method: 'wallet_invokeSnap',
             params: {
                 snapId: snapId,
-                request: { method: 'split_secret' }
+                request: {
+                    method: 'split_secret',
+                    params: {
+                        t: tVal,
+                        n: nVal
+                    }
+                }
             }
         });
 
-        // 3. Sonuç Kontrolü
         if (result && result.success) {
-            // Ekrana veri yazdırmıyoruz!
             document.getElementById('split-result-area').classList.remove('hidden');
 
-            // Kullanıcıyı bilgilendir
             const sharesOutput = document.getElementById('shares-output');
-            sharesOutput.value = "SECURE MODE: Shares are displayed inside MetaMask window only.\nThey are not saved here for your security.";
+            sharesOutput.value = `SECURE MODE SUCCESS:\nThe secret was split using a (${tVal}-of-${nVal}) scheme inside the isolated Snap environment.\n\nShares are displayed in the MetaMask window pop-up only.`;
 
-            // QR alanını temizle ve bilgi mesajı koy
             const qrGrid = document.getElementById('qr-grid');
-            qrGrid.innerHTML = "<p style='color:#ccc; padding:20px;'>QR Codes are disabled in Secure Snap Mode.</p>";
+            qrGrid.innerHTML = "<p style='color:#27ae60; padding:20px; font-weight:bold;'>Process Completed Successfully in MetaMask.</p>";
 
             showToast("Operation completed in MetaMask.", 'success');
         } else {
@@ -406,8 +417,7 @@ async function connectAndSplit(e) {
 
     } catch (err) {
         console.error(err);
-        // Kullanıcı pencereyi kapatırsa buraya düşer
-        showToast("Operation cancelled by user.", 'error');
+        showToast("Operation cancelled or failed.", 'error');
     }
 }
 

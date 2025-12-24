@@ -4,7 +4,12 @@ import { Box, Text, Heading, Divider, Copyable, Bold } from '@metamask/snaps-sdk
 export const onRpcRequest: OnRpcRequestHandler = async ({ origin, request }) => {
   switch (request.method) {
     case 'split_secret':
-      // 1. ADIM: Kullanıcıdan Şifreyi İste (Web sitesi görmeden)
+
+      const params = request.params as { t?: number; n?: number } || {};
+      const t_value = params.t || 3;
+      const n_value = params.n || 5;
+
+      // 2. ADIM: Kullanıcıdan Sırrı İste (Prompt)
       const secret = await snap.request({
         method: 'snap_dialog',
         params: {
@@ -14,7 +19,7 @@ export const onRpcRequest: OnRpcRequestHandler = async ({ origin, request }) => 
               <Heading>MnemoShare</Heading>
               <Text>
                 Please paste your Master Secret below.
-                <Bold> It will be processed securely and never shared with the website.</Bold>
+                <Bold> It will be processed securely based on your selected ({String(t_value)}-of-{String(n_value)}) scheme.</Bold>
               </Text>
             </Box>
           ),
@@ -25,33 +30,37 @@ export const onRpcRequest: OnRpcRequestHandler = async ({ origin, request }) => 
       if (!secret || typeof secret !== 'string') return null;
 
       try {
-        // 2. ADIM: Python Backend'e Hesaplama İçin Gönder
-        // Not: snap.manifest.json dosyasında "endowment:network-access" izni olmalı.
+
         const response = await fetch('http://127.0.0.1:5000/split', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ secret: secret, t: 3, n: 5 }), // Varsayılan: 3/5
+          body: JSON.stringify({
+            secret: secret,
+            t: t_value,  // Kullanıcının seçimi
+            n: n_value   // Kullanıcının seçimi
+          }),
         });
 
         const data = await response.json();
         if (!response.ok) throw new Error(data.error);
 
-        // 3. ADIM: Sonuçları Güvenli Pencerede (Snap Dialog) Göster
-        // Web sitesi bu pencerenin içeriğini OKUYAMAZ.
+        // 4. ADIM: Sonuçları Göster
         await snap.request({
           method: 'snap_dialog',
           params: {
-            type: 'alert', // 'alert' kullanıyoruz ki kullanıcı 'OK' diyene kadar kapanmasın
+            type: 'alert',
             content: (
               <Box>
                 <Heading>Shares Created Successfully</Heading>
+                <Text>
+                   Scheme Applied: <Bold>({String(t_value)}-of-{String(n_value)})</Bold>
+                </Text>
                 <Text>
                   Please copy these shares manually.
                   <Bold> For your security, these are NOT saved to the website.</Bold>
                 </Text>
                 <Divider />
 
-                {/* Gelen Share Listesini Ekrana Basıyoruz */}
                 {data.shares.map((share: string, index: number) => (
                   <Box>
                     <Text><Bold>Share #{String(index + 1)}</Bold></Text>
@@ -68,12 +77,9 @@ export const onRpcRequest: OnRpcRequestHandler = async ({ origin, request }) => 
           },
         });
 
-        // 4. KRİTİK NOKTA: Web Sitesine Veri DÖNDÜRMÜYORUZ
-        // Sadece işlemin başarılı olduğunu söylüyoruz.
         return { success: true };
 
       } catch (error) {
-        // Hata durumunda kullanıcıyı bilgilendir
         await snap.request({
           method: 'snap_dialog',
           params: {

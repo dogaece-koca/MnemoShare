@@ -13,6 +13,7 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
+
 @app.route("/")
 def serve_index():
     return send_from_directory('../frontend', 'index.html')
@@ -37,8 +38,15 @@ def api_split():
     try:
         data = request.get_json(force=True)
         secret = str(data.get("secret"))
-        t = int(data.get("t"))
-        n = int(data.get("n"))
+
+        # --- GÜNCELLEME BURADA ---
+        # Frontend'den t veya n gelmezse varsayılan 3 ve 5 al.
+        # Gelirse integer'a çevirip onu kullan.
+        t = int(data.get("t", 3))
+        n = int(data.get("n", 5))
+
+        # DEBUG: Terminalde hangi sayıların geldiğini gör
+        print(f"DEBUG: Gelen İstek -> Threshold(t): {t}, Total Shares(n): {n}")
 
     except Exception as e:
         return jsonify({"error": "Input data error (JSON or invalid t/n value): " + str(e)}), 400
@@ -106,6 +114,7 @@ def generate_qr():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 @app.route('/hide-in-image', methods=['POST'])
 def hide_in_image():
